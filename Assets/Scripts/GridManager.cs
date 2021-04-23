@@ -85,4 +85,8 @@ public class GridManager : MonoBehaviour
             start = new Vector2Int(roadPath[0].X, roadPath[0].Y);
         }
     }
+
+    public List<Spot> GetPath(Vector2Int start, Vector2Int end) {
+        return astar.CreatePath(spots,start,end,1000);
+    }
 }
