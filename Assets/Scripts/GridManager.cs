@@ -6,21 +6,24 @@ using UnityEngine.Tilemaps;
 public class GridManager : MonoBehaviour
 {
     public Tilemap tilemap;
-    public Tilemap roadMap;
+    public Tilemap accessibilityMap;
     public TileBase roadTile;
     public Vector3Int[,] spots;
     Astar astar;
     List<Spot> roadPath = new List<Spot>();
     new Camera camera;
     BoundsInt bounds;
+    public GameObject towerPrefab;
+
+    GameManager gameManager;
     // Start is called before the first frame update
     void Start()
     {
         tilemap.CompressBounds();
-        roadMap.CompressBounds();
+        accessibilityMap.CompressBounds();
         bounds = tilemap.cellBounds;
         camera = Camera.main;
-
+        gameManager = GameObject.Find("Game").GetComponent<GameManager>();
 
         CreateGrid();
         astar = new Astar(spots, bounds.size.x, bounds.size.y);
@@ -32,7 +35,7 @@ public class GridManager : MonoBehaviour
         {
             for (int y = bounds.yMin, j = 0; j < (bounds.size.y); y++, j++)
             {
-                if (tilemap.HasTile(new Vector3Int(x, y, 0)))
+                if (accessibilityMap.HasTile(new Vector3Int(x, y, 0)))
                 {
                     spots[i, j] = new Vector3Int(x, y, 0);
                 }
@@ -47,42 +50,35 @@ public class GridManager : MonoBehaviour
     {
         for (int i = 0; i < roadPath.Count; i++)
         {
-            roadMap.SetTile(new Vector3Int(roadPath[i].X, roadPath[i].Y, 0), roadTile);
+            accessibilityMap.SetTile(new Vector3Int(roadPath[i].X, roadPath[i].Y, 0), roadTile);
         }
     }
     // Update is called once per frame
     public Vector2Int start;
     void Update()
-    {
-
-        if (Input.GetMouseButton(1))
-        {
-            Vector3 world = camera.ScreenToWorldPoint(Input.mousePosition);
-            Vector3Int gridPos = tilemap.WorldToCell(world);
-            start = new Vector2Int(gridPos.x, gridPos.y);
-        }
-        if (Input.GetMouseButton(2))
-        {
-            Vector3 world = camera.ScreenToWorldPoint(Input.mousePosition);
-            Vector3Int gridPos = tilemap.WorldToCell(world);
-            roadMap.SetTile(new Vector3Int(gridPos.x, gridPos.y, 0), null);
-        }
+    { 
         if (Input.GetMouseButton(0))
         {
-            CreateGrid();
-
             Vector3 world = camera.ScreenToWorldPoint(Input.mousePosition);
-            Vector3Int gridPos = tilemap.WorldToCell(world);
+            Vector3Int gridPos = accessibilityMap.WorldToCell(world);
+            if (accessibilityMap.GetTile(new Vector3Int(gridPos.x, gridPos.y, 0))) {
+                accessibilityMap.SetTile(new Vector3Int(gridPos.x, gridPos.y, 0), null);
 
-            if (roadPath != null && roadPath.Count > 0)
-                roadPath.Clear();
 
-            roadPath = astar.CreatePath(spots, start, new Vector2Int(gridPos.x, gridPos.y), 1000);
-            if (roadPath == null)
-                return;
+                    GameObject creature = Instantiate(towerPrefab,
+                    new Vector3(gridPos.x, gridPos.y, 0) + tilemap.transform.localScale / 2.0f,
+                    Quaternion.identity,
+                    GameObject.Find("Instances").transform);
 
-            DrawRoad();
-            start = new Vector2Int(roadPath[0].X, roadPath[0].Y);
+
+                CreateGrid();
+                gameManager.placedStones++;
+                if (gameManager.placedStones == 5) {
+                    gameManager.gameState = GameManager.GameState.defending;
+                    gameManager.placedStones = 0;
+                }
+            }
+            
         }
     }
 
