@@ -1,11 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.U2D;
 
 public class CreatureManager : MonoBehaviour
 {
     GridManager gridManager;
-    public Sprite creatureSprites;
+    public SpriteAtlas creatureSprites;
     public GameObject pathing;
     public GameObject creaturePrefab;
     // Start is called before the first frame update
@@ -23,19 +25,32 @@ public class CreatureManager : MonoBehaviour
 
     IEnumerator spawnCreatures() 
     {
-        for (int i = 0; i < 6; i++) { 
-            yield return new WaitForSeconds(5);
-            Vector2Int start = new Vector2Int((int)pathing.transform.GetChild(0).position.x, (int)pathing.transform.GetChild(0).position.y);
-            Vector2Int end = new Vector2Int((int)pathing.transform.GetChild(6).position.x, (int)pathing.transform.GetChild(6).position.y);
-            List<Spot> path = gridManager.GetPath(start, end);
-            Debug.Log(path[i].Y);
+        yield return new WaitForSeconds(1);
+        List<Vector3> path = GetFullPath();
+        for (int i = 0; i < path.Count; i++) { 
+            yield return new WaitForSeconds(0.1f);
             GameObject creature = Instantiate(creaturePrefab,
-                new Vector3(path[i].X, path[i].Y, 0), 
+                new Vector3(path[i].x, path[i].y, 0), 
                 Quaternion.identity,
                 GameObject.Find("Instances").transform);
 
-            creature.GetComponent<SpriteRenderer>().sprite = creatureSprites;
+            creature.GetComponent<SpriteRenderer>().sprite = creatureSprites.GetSprite("urizen_653");
             
         }
+    }
+
+    private List<Vector3> GetFullPath() {
+        List<Vector3> path = new List<Vector3>();
+        for (int i = 0; i < pathing.transform.childCount - 1; i++) {
+            Vector2 start = new Vector2(pathing.transform.GetChild(i).position.x, pathing.transform.GetChild(i).position.y);
+            Vector2 end = new Vector2(pathing.transform.GetChild(i+1).position.x, pathing.transform.GetChild(i+1).position.y);
+            path.AddRange(gridManager.GetPath(start, end));
+            if (i + 1 < pathing.transform.childCount - 1) {
+                path.RemoveAt(path.Count - 1);
+            }
+        }
+
+
+        return path;
     }
 }

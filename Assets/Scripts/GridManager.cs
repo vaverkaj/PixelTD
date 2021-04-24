@@ -86,7 +86,18 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public List<Spot> GetPath(Vector2Int start, Vector2Int end) {
-        return astar.CreatePath(spots,start,end,1000);
+    public List<Vector3> GetPath(Vector2 start, Vector2 end) {
+        Vector3Int startCell = tilemap.WorldToCell(new Vector3(start.x, start.y, 0));
+        Vector3Int endCell = tilemap.WorldToCell(new Vector3(end.x, end.y, 0));
+        List<Spot> pathTiles = astar.CreatePath(spots, new Vector2Int(startCell.x, startCell.y), new Vector2Int(endCell.x, endCell.y), 1000);
+        List<Vector3> path = new List<Vector3>();
+        for (int i = 0; i < pathTiles.Count; i++) {
+            path.Add(tilemap.CellToWorld(new Vector3Int(
+                pathTiles[pathTiles.Count-1 -i].X, 
+                pathTiles[pathTiles.Count - 1 -i].Y
+                , 0)) + tilemap.transform.localScale/2.0f);
+        }
+        return path;
     }
+
 }
